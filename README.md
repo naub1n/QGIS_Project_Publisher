@@ -27,10 +27,10 @@ Publish easily your QGIS project on QWC2 with [QWC Project Publisher service](ht
 
 ## Configuration
 
-If qwc-project-publisher-service need authentication, create a new Authentication ID, if not exists, with QGIS authentication manager.</br>
-`Settings` -> `Options` -> `Authentication`</br>
-
-Select the good **AuthID** in Project Publisher plugin
+If qwc-project-publisher-service need authentication:
+* create a new Authentication ID, if not exists, with QGIS authentication manager.</br>
+`Settings` -> `Options` -> `Authentication`
+* Select correct **AuthID** in Project Publisher plugin
 
 Add the qwc-project-publisher-service **URL**. If you use nginx service, use the correct URL redirection (Ex: http://www.myqwc2app.com/publisher).
 
