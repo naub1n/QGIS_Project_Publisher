@@ -11,7 +11,7 @@
         </td>
         <td align="center" style="horizontal-align: center; vertical-align: middle;padding: 0;margin: 0;" height="20">
             <a href="README.md">  
-                <img src="https://github.com/hampusborgos/country-flags/raw/main/png250px/gb.png" width="40" height="20">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/English_language.svg" width="40" height="20">
             </a>
         </td>
     </tr> 
