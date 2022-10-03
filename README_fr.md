@@ -34,9 +34,9 @@ Si qwc-project-publisher-service a besoin d'une authentification:
 
 Ajoutez l'**URL** de qwc-project-publisher-service. Si vous utilisez le service nginx, utilisez la bonne URL de redirection (Ex: http://www.myqwc2app.com/publisher).
 
-## How to use :
+## Usage :
 
-Cliquez sur le bouton `Connect` pour lister l'ensemble des projets exposés par qwc-project-publisher-service.
+Cliquez sur le bouton `Connecter` pour lister l'ensemble des projets exposés par qwc-project-publisher-service.
 
 Maintenant vous pouvez:
 * Selectionner un projet et cliquer sur le bouton `Charger` pour ouvrir le projet dans QGIS
