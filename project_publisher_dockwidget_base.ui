@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>301</width>
-    <height>351</height>
+    <height>308</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -71,27 +71,6 @@
     </item>
     <item row="7" column="0">
      <layout class="QVBoxLayout" name="verticalLayout_3">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <item>
-         <widget class="QRadioButton" name="qtrb_local_filename">
-          <property name="text">
-           <string>Use local filename</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QRadioButton" name="qtrb_qwc_filename">
-          <property name="text">
-           <string>Use QWC filename</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
       <item>
        <widget class="QPushButton" name="qtbtn_publish">
         <property name="sizePolicy">

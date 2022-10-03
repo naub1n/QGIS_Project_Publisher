@@ -203,7 +203,6 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         :rtype: requests.Response
         """
         url_listprojects = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_listprojects_path)
-        self.qtcbs_projects_list.clear()
 
         try:
             response = self.session.get(url_listprojects)
@@ -223,10 +222,14 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         :return: None.
         """
+
+        cbx = self.qtcbs_projects_list
+        cbx.clear()
+        cbx.addItem(self.new_project_item_value())
         projects = self.get_projects()
         if projects:
             for project in projects:
-                self.qtcbs_projects_list.addItem(project)
+                cbx.addItem(project)
 
     def get_combobox_items(self, combobox_widget):
         """Get items in projects QCombobox
@@ -308,6 +311,41 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if auth_id in self.get_combobox_items(self.qtcbx_auth_ids):
                 self.qtcbx_auth_ids.setCurrentText(auth_id)
 
+    def new_project_item_value(self):
+        """Set value of the first item in projects combobox, for create a new project un QWC
+
+        :return: Item value.
+        :rtype: str
+        """
+        return self.tr('_New project_')
+
+    def get_current_project_path(self):
+        """Read project path in QGIS instance
+
+        :return: Path.
+        :rtype: str
+        """
+        current_project = QgsProject.instance()
+        current_project_path = current_project.fileName()
+
+        return current_project_path
+
+    def get_output_project_filename(self):
+        """Prepare the project filename before publishing
+
+        :return: Filename.
+        :rtype: str
+        """
+        current_project_path = self.get_current_project_path()
+        current_project_filename = os.path.basename(current_project_path)
+
+        if self.qtcbs_projects_list.currentText() == self.new_project_item_value():
+            output_project_filename = current_project_filename
+        else:
+            output_project_filename = self.qtcbs_projects_list.currentText()
+
+        return output_project_filename
+
     def _clicked_connect_button(self):
         """Action when Connect button is clicked
 
@@ -331,80 +369,73 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         qwc_getproject_content_params = {'filename': project_filename, 'content_only': False}
 
         if project_filename:
-            local_project_path = os.path.join(tempfile.gettempdir(), project_filename)
-            try:
-                content = self.session.get(url_get_project, params=qwc_getproject_content_params, stream=True).content
-            except Exception as e:
-                self.log_err(str(e), True)
-                return
+            if project_filename == self.new_project_item_value():
+                self.log_warn(self.tr("Unable to load project '%s'") % project_filename, True)
+            else:
+                local_project_path = os.path.join(tempfile.gettempdir(), project_filename)
+                try:
+                    content = self.session.get(url_get_project, params=qwc_getproject_content_params, stream=True).content
+                except Exception as e:
+                    self.log_err(str(e), True)
+                    return
 
-            with open(local_project_path, 'wb') as out_file:
-                out_file.write(content)
-                out_file.close()
+                with open(local_project_path, 'wb') as out_file:
+                    out_file.write(content)
+                    out_file.close()
 
-            self.log_info(self.tr("Project download to %s.") % local_project_path)
+                self.log_info(self.tr("Project download to %s.") % local_project_path)
 
-            self.read_project(local_project_path)
+                self.read_project(local_project_path)
 
     def _clicked_publish_button(self):
         """Action when publish button is clicked
 
         :return: None.
         """
-        if self.qtrb_qwc_filename.isChecked() and not self.qtcbs_projects_list.currentText():
-            self.log_warn(self.tr("No project selected"), True)
-        else:
-            if self.check_before_connect():
-                if self.connect_to_qwc():
-                    current_project = QgsProject.instance()
-                    current_project.write()
+        if self.check_before_connect():
+            if self.connect_to_qwc():
 
-                    current_project_path = current_project.fileName()
-                    current_project_filename = os.path.basename(current_project_path)
+                current_project_path = self.get_current_project_path()
+                current_project_filename = os.path.basename(current_project_path)
 
-                    url_publish_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_publishproject_path)
-                    qwc_getproject_content_params = {'filename': current_project_filename, 'delete': False}
+                url_publish_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_publishproject_path)
+                qwc_getproject_content_params = {'filename': current_project_filename, 'delete': False}
 
-                    if self.qtrb_local_filename.isChecked():
-                        output_project_filename = current_project_filename
-                    else:
-                        self.log_info(str(self.qtcbs_projects_list.currentText()))
-                        output_project_filename = self.qtcbs_projects_list.currentText()
+                output_project_filename = self.get_output_project_filename()
 
-                    projects = self.get_projects()
-                    if projects:
-                        if output_project_filename in projects:
-                            reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
-                                                                   self.tr('Project already exists'),
-                                                                   self.tr('Replace online project?'),
-                                                                   QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
-                            if not reply == QtWidgets.QMessageBox.Yes:
-                                return
+                projects = self.get_projects()
+                if projects:
+                    if output_project_filename in projects:
+                        reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
+                                                               self.tr('Project already exists'),
+                                                               self.tr('Replace online project?'),
+                                                               QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+                        if not reply == QtWidgets.QMessageBox.Yes:
+                            return
 
-                    if current_project_path:
-                        with open(current_project_path, 'rb') as f:
-                            binary_file = f.read()
-                            f.close()
-                    else:
-                        self.log_warn(self.tr("Current project is not saved."), True)
-                        return
+                if current_project_path:
+                    with open(current_project_path, 'rb') as f:
+                        binary_file = f.read()
+                else:
+                    self.log_warn(self.tr("Current project is not saved."), True)
+                    return
 
-                    files = {'file': (output_project_filename, binary_file)}
+                files = {'file': (output_project_filename, binary_file)}
 
-                    self.log_info(self.tr("Publishing ..."))
-                    try:
-                        response = self.session.post(url_publish_project, files=files, params=qwc_getproject_content_params)
-                    except Exception as e:
-                        self.log_err(str(e), True)
-                        return
+                self.log_info(self.tr("Publishing ..."))
+                try:
+                    response = self.session.post(url_publish_project, files=files, params=qwc_getproject_content_params)
+                except Exception as e:
+                    self.log_err(str(e), True)
+                    return
 
-                    if not response.status_code == 200:
-                        self.log_err(self.tr("Unable to publish project %s : %s") % (output_project_filename, self.get_error_info(response)), True)
-                    else:
-                        self.log_info(self.tr("Project %s published") % output_project_filename, True)
-                        self.populate_combobox_projects()
-                        if output_project_filename in self.get_combobox_items(self.qtcbs_projects_list):
-                            self.qtcbs_projects_list.setCurrentText(output_project_filename)
+                if not response.status_code == 200:
+                    self.log_err(self.tr("Unable to publish project %s : %s") % (output_project_filename, self.get_error_info(response)), True)
+                else:
+                    self.log_info(self.tr("Project %s published") % output_project_filename, True)
+                    self.populate_combobox_projects()
+                    if output_project_filename in self.get_combobox_items(self.qtcbs_projects_list):
+                        self.qtcbs_projects_list.setCurrentText(output_project_filename)
 
     def _clicked_delete_button(self):
         """Action when Delete button is clicked
@@ -413,25 +444,28 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """
         project_filename = self.qtcbs_projects_list.currentText()
         if project_filename:
-            reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
-                                                   self.tr('Delete project'),
-                                                   self.tr('Are you sure to delete permanently %s project in QWC?') % project_filename,
-                                                   QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
-            if reply == QtWidgets.QMessageBox.Yes:
-                url_delete_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_deleteproject_path)
-                qwc_deleteproject_params = {'filename': project_filename}
+            if project_filename == self.new_project_item_value():
+                self.log_warn(self.tr("Unable to delete project '%s'") % project_filename, True)
+            else:
+                reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
+                                                       self.tr('Delete project'),
+                                                       self.tr('Are you sure to delete permanently %s project in QWC?') % project_filename,
+                                                       QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+                if reply == QtWidgets.QMessageBox.Yes:
+                    url_delete_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_deleteproject_path)
+                    qwc_deleteproject_params = {'filename': project_filename}
 
-                try:
-                    response = self.session.delete(url_delete_project, params=qwc_deleteproject_params)
-                except Exception as e:
-                    self.log_err(str(e), True)
-                    return
+                    try:
+                        response = self.session.delete(url_delete_project, params=qwc_deleteproject_params)
+                    except Exception as e:
+                        self.log_err(str(e), True)
+                        return
 
-                if not response.status_code == 200:
-                    self.log_err(self.tr("Unable to delete project %s : %s") % (project_filename, self.get_error_info(response)), True)
-                else:
-                    self.log_info(self.tr("Project %s deleted") % project_filename, True)
-                    self.populate_combobox_projects()
+                    if not response.status_code == 200:
+                        self.log_err(self.tr("Unable to delete project %s : %s") % (project_filename, self.get_error_info(response)), True)
+                    else:
+                        self.log_info(self.tr("Project %s deleted") % project_filename, True)
+                        self.populate_combobox_projects()
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
