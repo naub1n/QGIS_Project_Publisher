@@ -27,7 +27,7 @@
         <translation>L&apos;URL de QWC Project publisher service n&apos;est pas définie</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="166"/>
+        <location filename="../project_publisher_dockwidget.py" line="425"/>
         <source>Project unsaved</source>
         <translation>Projet non sauvegardé</translation>
     </message>
@@ -57,52 +57,52 @@
         <translation type="obsolete">Aucun projet selectionné</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="438"/>
+        <location filename="../project_publisher_dockwidget.py" line="448"/>
         <source>Project already exists</source>
         <translation>Le projet existe déjà</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="438"/>
+        <location filename="../project_publisher_dockwidget.py" line="448"/>
         <source>Replace online project?</source>
         <translation>Remplacer le projet en ligne?</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="449"/>
+        <location filename="../project_publisher_dockwidget.py" line="459"/>
         <source>Current project is not saved.</source>
         <translation>Projet actuel non sauvegardé.</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="454"/>
+        <location filename="../project_publisher_dockwidget.py" line="464"/>
         <source>Publishing ...</source>
         <translation>Publication ...</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="462"/>
+        <location filename="../project_publisher_dockwidget.py" line="475"/>
         <source>Unable to publish project %s : %s</source>
         <translation>Impossible de publier le projet %s : %s</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="464"/>
+        <location filename="../project_publisher_dockwidget.py" line="477"/>
         <source>Project %s published</source>
         <translation>Projet %s publié</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="479"/>
+        <location filename="../project_publisher_dockwidget.py" line="492"/>
         <source>Delete project</source>
         <translation>Suppresion du projet</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="479"/>
+        <location filename="../project_publisher_dockwidget.py" line="492"/>
         <source>Are you sure to delete permanently %s project in QWC?</source>
         <translation>Etes-vous sûr(e) de supprimer le projet %s dans QWC de manière permanente?</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="494"/>
+        <location filename="../project_publisher_dockwidget.py" line="507"/>
         <source>Unable to delete project %s : %s</source>
         <translation>Impossible de supprimer le projet %s : %s</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="496"/>
+        <location filename="../project_publisher_dockwidget.py" line="509"/>
         <source>Project %s deleted</source>
         <translation>Projet %s supprimé</translation>
     </message>
@@ -127,9 +127,19 @@
         <translation>_Nouveau projet_</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="477"/>
+        <location filename="../project_publisher_dockwidget.py" line="490"/>
         <source>Unable to delete project &apos;%s&apos;</source>
         <translation>Impossible de supprimer le projet &apos;%s&apos;</translation>
+    </message>
+    <message>
+        <location filename="../project_publisher_dockwidget.py" line="402"/>
+        <source>Unable to load project &apos;%s&apos;</source>
+        <translation>Impossible de charger le projet &apos;%s&apos;</translation>
+    </message>
+    <message>
+        <location filename="../project_publisher_dockwidget.py" line="425"/>
+        <source>Project must be saved before publishing. Do you want to save it now?</source>
+        <translation>Le projet doit être enregistré avec d&apos;être publié. Souhaitez-vous l&apos;enregistrer maintenant?</translation>
     </message>
 </context>
 <context>

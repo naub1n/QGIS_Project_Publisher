@@ -421,6 +421,16 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         :return: None.
         """
+        if QgsProject.instance().isDirty():
+            reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
+                                                   self.tr('Project unsaved'),
+                                                   self.tr('Project must be saved before publishing. Do you want to save it now?'),
+                                                   QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+            if reply == QtWidgets.QMessageBox.Yes:
+                iface.mainWindow().findChild(QtWidgets.QAction, 'mActionSaveProject').trigger()
+            else:
+                return
+
         if self.check_before_connect():
             if self.connect_to_qwc():
 
