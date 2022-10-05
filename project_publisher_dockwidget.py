@@ -50,6 +50,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # http://doc.qt.io/qt-5/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self.qtbtn_refresh_auth.setIcon(self.get_icon("refresh"))
 
         self.cfg_file = os.path.join(os.path.dirname(__file__), 'project_publisher_conf.json')
 
@@ -63,6 +64,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.qtbtn_load_project.clicked.connect(self._clicked_load_button)
         self.qtbtn_publish.clicked.connect(self._clicked_publish_button)
         self.qtbtn_delete_project.clicked.connect(self._clicked_delete_button)
+        self.qtbtn_refresh_auth.clicked.connect(self._clicked_refresh_button)
 
         self.session = None
         self.headers = {}
@@ -109,6 +111,14 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def tr(self, message):
         return QCoreApplication.translate('ProjectPublisherDockWidget', message)
 
+    def get_icon(self, name):
+        if name == "refresh":
+            icon = QtGui.QIcon(QgsApplication.iconPath("mActionRefresh.svg"))
+        else:
+            icon = QtGui.QIcon(QgsApplication.iconPath("missing_image.svg"))
+
+        return icon
+
     def qwc_pp_service_base_url(self):
         """Add trailing slash at the end of base URL?
 
@@ -124,8 +134,10 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """
         auth_manager = QgsApplication.authManager()
         auth_ids = auth_manager.availableAuthMethodConfigs().keys()
+        cbx = self.qtcbx_auth_ids
+        cbx.clear()
         for auth_id in auth_ids:
-            self.qtcbx_auth_ids.addItem(auth_id)
+            cbx.addItem(auth_id)
 
     def check_before_connect(self):
         """Check value of AuthId combobox and value of QWC project publisher service URL
@@ -466,6 +478,13 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                     else:
                         self.log_info(self.tr("Project %s deleted") % project_filename, True)
                         self.populate_combobox_projects()
+
+    def _clicked_refresh_button(self):
+        """Action when Refresh button is clicked
+
+        :return: None.
+        """
+        self.load_auth_ids()
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
