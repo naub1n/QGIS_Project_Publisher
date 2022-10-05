@@ -199,9 +199,12 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         try:
             response = self.session.post(login_url, data=data)
             self.headers = response.headers
-            csrftoken = self.session.cookies['csrf_access_token']
-            self.session.headers.update({'X-CSRF-TOKEN': csrftoken})
-            self.headers['X-CSRF-TOKEN'] = csrftoken
+            if 'csrf_access_token' in self.session.cookies:
+                csrftoken = self.session.cookies['csrf_access_token']
+                self.session.headers.update({'X-CSRF-TOKEN': csrftoken})
+                self.headers['X-CSRF-TOKEN'] = csrftoken
+            else:
+                self.log_warn("No CSRF token in reponse cookies")
         except Exception as e:
             self.log_err(str(e), True)
             return
@@ -262,10 +265,21 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.session = requests.session()
         if self.qtgbx_auth.isChecked():
             login_response = self.login_to_qwc()
-            if login_response:
-                if not login_response.status_code == 200:
-                    self.log_err(self.tr("Unable to login in to qwc auth service : %s") % self.get_error_info(login_response), True)
-                    return False
+            error_msg = self.tr("Unable to login in to qwc auth service : %s")
+
+            if login_response is None:
+                self.log_err(error_msg % self.get_error_info(login_response), True)
+                return False
+
+            if "login" in login_response.url:
+                self.log_err(error_msg % self.tr('Authentication failed'), True)
+                return False
+
+            if not login_response.status_code == 200:
+                self.log_err(error_msg % self.get_error_info(login_response), True)
+                return False
+
+        self.log_info(self.tr("Successfully connected!"), True)
 
         self.save_config()
 
@@ -278,10 +292,13 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         :return: Message string with error.
         :rtype: str
         """
-        try:
-            error_info = response.json()
-        except:
-            error_info = 'HTTP Error %s' % response.status_code
+        if response is not None:
+            try:
+                error_info = response.json()
+            except:
+                error_info = 'HTTP Error %s' % response.status_code
+        else:
+            error_info = self.tr('No request response')
 
         return error_info
 
