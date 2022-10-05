@@ -6,7 +6,7 @@
 name=Project Publisher for QWC
 qgisMinimumVersion=3.0
 description=Publish your project to QWC2 easily with qwc-project-publisher-service
-version=0.1
+version=0.2
 author=Nicolas AUBIN
 email=aubinnic@gmail.com
 
@@ -20,7 +20,12 @@ repository=http://repo
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-# changelog=
+# changelog=0.1
+  - Initial release
+  0.2
+  - Add button to refresh AuthIDs
+  - Add message when user is connected and detect failed authentication
+  - Update publish timeout to 120s
 
 # Tags are comma separated with spaces allowed
 tags=python
