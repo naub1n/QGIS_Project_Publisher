@@ -453,7 +453,10 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
                 self.log_info(self.tr("Publishing ..."))
                 try:
-                    response = self.session.post(url_publish_project, files=files, params=qwc_getproject_content_params)
+                    response = self.session.post(url_publish_project,
+                                                 files=files,
+                                                 params=qwc_getproject_content_params,
+                                                 timeout=120)
                 except Exception as e:
                     self.log_err(str(e), True)
                     return
