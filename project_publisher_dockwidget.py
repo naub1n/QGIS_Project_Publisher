@@ -65,6 +65,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.qtbtn_publish.clicked.connect(self._clicked_publish_button)
         self.qtbtn_delete_project.clicked.connect(self._clicked_delete_button)
         self.qtbtn_refresh_auth.clicked.connect(self._clicked_refresh_button)
+        self.qtle_url_qwc.textChanged.connect(self._changed_url_edit)
 
         self.session = None
         self.headers = {}
@@ -214,7 +215,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def get_projects(self):
         """Get all projects exposed by QWC project publisher
 
-        :return: Request response or None if error.
+        :return: Request response or False if error.
         :rtype: requests.Response
         """
         url_listprojects = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_listprojects_path)
@@ -223,11 +224,11 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             response = self.session.get(url_listprojects)
         except Exception as e:
             self.log_err(str(e), True)
-            return
+            return False
 
         if not response.status_code == 200:
             self.log_err(self.tr("Unable to list projects : %s") % self.get_error_info(response), True)
-            return
+            return False
 
         if response:
             return response.json()
@@ -235,16 +236,20 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def populate_combobox_projects(self):
         """Add items in projects combobox
 
-        :return: None.
+        :return: Return True if success.
+        :rtype: bool
         """
-
-        cbx = self.qtcbs_projects_list
-        cbx.clear()
-        cbx.addItem(self.new_project_item_value())
         projects = self.get_projects()
         if projects:
+            cbx = self.qtcbs_projects_list
+            cbx.clear()
+            cbx.addItem(self.new_project_item_value())
             for project in projects:
                 cbx.addItem(project)
+        else:
+            return False
+
+        return True
 
     def get_combobox_items(self, combobox_widget):
         """Get items in projects QCombobox
@@ -375,6 +380,17 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         return output_project_filename
 
+    def enable_after_connect(self, enabled):
+        """Enable or disable action buttons
+
+        :param bool enabled: Set widgets to enabled
+        :return: None.
+        """
+        self.qtgb_projects.setEnabled(enabled)
+        self.qtbtn_publish.setEnabled(enabled)
+        self.qtbtn_connect.setEnabled(not enabled)
+
+
     def _clicked_connect_button(self):
         """Action when Connect button is clicked
 
@@ -385,7 +401,8 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 self.session = None
 
             if self.connect_to_qwc():
-                self.populate_combobox_projects()
+                if self.populate_combobox_projects():
+                    self.enable_after_connect(True)
 
     def _clicked_load_button(self):
         """Action when Load button is clicked
@@ -431,53 +448,50 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             else:
                 return
 
-        if self.check_before_connect():
-            if self.connect_to_qwc():
+        current_project_path = self.get_current_project_path()
+        current_project_filename = os.path.basename(current_project_path)
 
-                current_project_path = self.get_current_project_path()
-                current_project_filename = os.path.basename(current_project_path)
+        url_publish_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_publishproject_path)
+        qwc_getproject_content_params = {'filename': current_project_filename, 'delete': False}
 
-                url_publish_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_publishproject_path)
-                qwc_getproject_content_params = {'filename': current_project_filename, 'delete': False}
+        output_project_filename = self.get_output_project_filename()
 
-                output_project_filename = self.get_output_project_filename()
-
-                projects = self.get_projects()
-                if projects:
-                    if output_project_filename in projects:
-                        reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
-                                                               self.tr('Project already exists'),
-                                                               self.tr('Replace online project?'),
-                                                               QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
-                        if not reply == QtWidgets.QMessageBox.Yes:
-                            return
-
-                if current_project_path:
-                    with open(current_project_path, 'rb') as f:
-                        binary_file = f.read()
-                else:
-                    self.log_warn(self.tr("Current project is not saved."), True)
+        projects = self.get_projects()
+        if projects:
+            if output_project_filename in projects:
+                reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
+                                                       self.tr('Project already exists'),
+                                                       self.tr('Replace online project?'),
+                                                       QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+                if not reply == QtWidgets.QMessageBox.Yes:
                     return
 
-                files = {'file': (output_project_filename, binary_file)}
+        if current_project_path:
+            with open(current_project_path, 'rb') as f:
+                binary_file = f.read()
+        else:
+            self.log_warn(self.tr("Current project is not saved."), True)
+            return
 
-                self.log_info(self.tr("Publishing ..."))
-                try:
-                    response = self.session.post(url_publish_project,
-                                                 files=files,
-                                                 params=qwc_getproject_content_params,
-                                                 timeout=120)
-                except Exception as e:
-                    self.log_err(str(e), True)
-                    return
+        files = {'file': (output_project_filename, binary_file)}
 
-                if not response.status_code == 200:
-                    self.log_err(self.tr("Unable to publish project %s : %s") % (output_project_filename, self.get_error_info(response)), True)
-                else:
-                    self.log_info(self.tr("Project %s published") % output_project_filename, True)
-                    self.populate_combobox_projects()
-                    if output_project_filename in self.get_combobox_items(self.qtcbs_projects_list):
-                        self.qtcbs_projects_list.setCurrentText(output_project_filename)
+        self.log_info(self.tr("Publishing ..."))
+        try:
+            response = self.session.post(url_publish_project,
+                                         files=files,
+                                         params=qwc_getproject_content_params,
+                                         timeout=120)
+        except Exception as e:
+            self.log_err(str(e), True)
+            return
+
+        if not response.status_code == 200:
+            self.log_err(self.tr("Unable to publish project %s : %s") % (output_project_filename, self.get_error_info(response)), True)
+        else:
+            self.log_info(self.tr("Project %s published") % output_project_filename, True)
+            self.populate_combobox_projects()
+            if output_project_filename in self.get_combobox_items(self.qtcbs_projects_list):
+                self.qtcbs_projects_list.setCurrentText(output_project_filename)
 
     def _clicked_delete_button(self):
         """Action when Delete button is clicked
@@ -515,6 +529,13 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         :return: None.
         """
         self.load_auth_ids()
+
+    def _changed_url_edit(self):
+        """Action when URL is changed
+
+        :return: None.
+        """
+        self.enable_after_connect(False)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()

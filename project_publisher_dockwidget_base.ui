@@ -104,7 +104,10 @@
      </layout>
     </item>
     <item row="5" column="0">
-     <widget class="QGroupBox" name="groupBox_2">
+     <widget class="QGroupBox" name="qtgb_projects">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="title">
        <string>Projects in QWC</string>
       </property>
