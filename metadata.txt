@@ -6,7 +6,7 @@
 name=Project Publisher for QWC
 qgisMinimumVersion=3.0
 description=Publish your project to QWC2 easily with qwc-project-publisher-service
-version=0.3
+version=0.4
 author=Nicolas AUBIN
 email=aubinnic@gmail.com
 
@@ -29,6 +29,9 @@ hasProcessingProvider=no
   0.3
   - Disable buttons when URL is edited
   - Check if project is saved before publishing
+  0.4
+  - Check error in API response when publishing
+  - Remove unnecessary timeout when publishing
 
 # Tags are comma separated with spaces allowed
 tags=python
