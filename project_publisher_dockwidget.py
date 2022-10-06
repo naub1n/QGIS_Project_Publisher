@@ -79,6 +79,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         :param str log_message: message to show.
         :param str level: Qgis Level.
+        :param bool user_alert: Add message in MessageBar
         :returns: None.
         """
         QgsMessageLog.logMessage(message, 'Project publisher', level=level, notifyUser=user_alert)
@@ -89,6 +90,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """Send critical message to QGIS Console and in MessageBar (optional)
 
         :param str log_message: message to show.
+        :param bool user_alert: Add message in MessageBar
         :returns: None.
         """
         self.log(log_message, Qgis.Critical, user_alert)
@@ -97,6 +99,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """Send warning message to QGIS Console and in MessageBar (optional)
 
         :param str log_message: message to show.
+        :param bool user_alert: Add message in MessageBar
         :returns: None.
         """
         self.log(log_message, Qgis.Warning, user_alert)
@@ -105,6 +108,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """Send info message to QGIS Console and in MessageBar (optional)
 
         :param str log_message: message to show.
+        :param bool user_alert: Add message in MessageBar
         :returns: None.
         """
         self.log(log_message, Qgis.Info, user_alert)
@@ -224,11 +228,11 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             response = self.session.get(url_listprojects)
         except Exception as e:
             self.log_err(str(e), True)
-            return False
+            return
 
         if not response.status_code == 200:
             self.log_err(self.tr("Unable to list projects : %s") % self.get_error_info(response), True)
-            return False
+            return
 
         if response:
             return response.json()
@@ -240,7 +244,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         :rtype: bool
         """
         projects = self.get_projects()
-        if projects:
+        if projects is not None:
             cbx = self.qtcbs_projects_list
             cbx.clear()
             cbx.addItem(self.new_project_item_value())
@@ -390,6 +394,29 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.qtbtn_publish.setEnabled(enabled)
         self.qtbtn_connect.setEnabled(not enabled)
 
+    def delete_project(self, project_filename, user_alert=True):
+        """Delete project in QWC
+
+        :param str project_filename: QGIS project filename
+        :param str user_alert: Add message in MessageBar
+        :return: None.
+        """
+        url_delete_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_deleteproject_path)
+        qwc_deleteproject_params = {'filename': project_filename}
+
+        try:
+            response = self.session.delete(url_delete_project, params=qwc_deleteproject_params)
+        except Exception as e:
+            self.log_err(str(e), user_alert)
+            return
+
+        if not response.status_code == 200:
+            self.log_err(
+                self.tr("Unable to delete project %s : %s") % (project_filename, self.get_error_info(response)), user_alert)
+        else:
+            self.log_info(self.tr("Project %s deleted") % project_filename, user_alert)
+            self.populate_combobox_projects()
+
 
     def _clicked_connect_button(self):
         """Action when Connect button is clicked
@@ -457,7 +484,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         output_project_filename = self.get_output_project_filename()
 
         projects = self.get_projects()
-        if projects:
+        if projects is not None:
             if output_project_filename in projects:
                 reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
                                                        self.tr('Project already exists'),
@@ -487,10 +514,17 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if not response.status_code == 200:
             self.log_err(self.tr("Unable to publish project %s : %s") % (output_project_filename, self.get_error_info(response)), True)
         else:
-            self.log_info(self.tr("Project %s published") % output_project_filename, True)
-            self.populate_combobox_projects()
-            if output_project_filename in self.get_combobox_items(self.qtcbs_projects_list):
-                self.qtcbs_projects_list.setCurrentText(output_project_filename)
+            r_api = response.json()
+            if 'error' in r_api:
+                self.log_err(self.tr("Unable to publish project %s") % output_project_filename, True)
+                self.log_err(self.tr("API Error : %s") % r_api['error'] +
+                             "\n\t" + self.tr("Deleting project in QWC ..."))
+                self.delete_project(output_project_filename, False)
+            else:
+                self.log_info(self.tr("Project %s published") % output_project_filename, True)
+                self.populate_combobox_projects()
+                if output_project_filename in self.get_combobox_items(self.qtcbs_projects_list):
+                    self.qtcbs_projects_list.setCurrentText(output_project_filename)
 
     def _clicked_delete_button(self):
         """Action when Delete button is clicked
@@ -507,20 +541,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                                                        self.tr('Are you sure to delete permanently %s project in QWC?') % project_filename,
                                                        QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
                 if reply == QtWidgets.QMessageBox.Yes:
-                    url_delete_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_deleteproject_path)
-                    qwc_deleteproject_params = {'filename': project_filename}
-
-                    try:
-                        response = self.session.delete(url_delete_project, params=qwc_deleteproject_params)
-                    except Exception as e:
-                        self.log_err(str(e), True)
-                        return
-
-                    if not response.status_code == 200:
-                        self.log_err(self.tr("Unable to delete project %s : %s") % (project_filename, self.get_error_info(response)), True)
-                    else:
-                        self.log_info(self.tr("Project %s deleted") % project_filename, True)
-                        self.populate_combobox_projects()
+                    self.delete_project(project_filename)
 
     def _clicked_refresh_button(self):
         """Action when Refresh button is clicked
