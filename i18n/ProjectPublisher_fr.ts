@@ -17,37 +17,37 @@
 <context>
     <name>ProjectPublisherDockWidget</name>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="155"/>
+        <location filename="../project_publisher_dockwidget.py" line="157"/>
         <source>Select an auth id</source>
         <translation>Selectionner au AuthId</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="159"/>
+        <location filename="../project_publisher_dockwidget.py" line="161"/>
         <source>QWC Project publisher service URL not defined</source>
         <translation>L&apos;URL de QWC Project publisher service n&apos;est pas définie</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="469"/>
+        <location filename="../project_publisher_dockwidget.py" line="493"/>
         <source>Project unsaved</source>
         <translation>Projet non sauvegardé</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="171"/>
+        <location filename="../project_publisher_dockwidget.py" line="173"/>
         <source>Continue without saving current project?</source>
         <translation>Continuer sans enregistrer le projet actuel?</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="234"/>
+        <location filename="../project_publisher_dockwidget.py" line="236"/>
         <source>Unable to list projects : %s</source>
         <translation>Impossible de lister les projets : %s</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="277"/>
+        <location filename="../project_publisher_dockwidget.py" line="279"/>
         <source>Unable to login in to qwc auth service : %s</source>
         <translation>Impossible de s&apos;authentifier dans QWC Auth service : %s</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="459"/>
+        <location filename="../project_publisher_dockwidget.py" line="483"/>
         <source>Project download to %s.</source>
         <translation>Projet téléchargé dans %s.</translation>
     </message>
@@ -57,104 +57,124 @@
         <translation type="obsolete">Aucun projet selectionné</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="489"/>
+        <location filename="../project_publisher_dockwidget.py" line="514"/>
         <source>Project already exists</source>
         <translation>Le projet existe déjà</translation>
     </message>
     <message>
         <location filename="../project_publisher_dockwidget.py" line="489"/>
         <source>Replace online project?</source>
-        <translation>Remplacer le projet en ligne?</translation>
+        <translation type="obsolete">Remplacer le projet en ligne?</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="500"/>
+        <location filename="../project_publisher_dockwidget.py" line="527"/>
         <source>Current project is not saved.</source>
         <translation>Projet actuel non sauvegardé.</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="505"/>
+        <location filename="../project_publisher_dockwidget.py" line="532"/>
         <source>Publishing ...</source>
         <translation>Publication ...</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="515"/>
+        <location filename="../project_publisher_dockwidget.py" line="542"/>
         <source>Unable to publish project %s : %s</source>
         <translation>Impossible de publier le projet %s : %s</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="524"/>
+        <location filename="../project_publisher_dockwidget.py" line="551"/>
         <source>Project %s published</source>
         <translation>Projet %s publié</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="539"/>
+        <location filename="../project_publisher_dockwidget.py" line="566"/>
         <source>Delete project</source>
         <translation>Suppresion du projet</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="539"/>
+        <location filename="../project_publisher_dockwidget.py" line="566"/>
         <source>Are you sure to delete permanently %s project in QWC?</source>
         <translation>Etes-vous sûr(e) de supprimer le projet %s dans QWC de manière permanente?</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="414"/>
+        <location filename="../project_publisher_dockwidget.py" line="433"/>
         <source>Unable to delete project %s : %s</source>
         <translation>Impossible de supprimer le projet %s : %s</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="417"/>
+        <location filename="../project_publisher_dockwidget.py" line="436"/>
         <source>Project %s deleted</source>
         <translation>Projet %s supprimé</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="284"/>
+        <location filename="../project_publisher_dockwidget.py" line="286"/>
         <source>Authentication failed</source>
         <translation>L&apos;authentification a échouée</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="291"/>
+        <location filename="../project_publisher_dockwidget.py" line="293"/>
         <source>Successfully connected!</source>
         <translation>Connection réussie!</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="310"/>
+        <location filename="../project_publisher_dockwidget.py" line="312"/>
         <source>No request response</source>
         <translation>Pas de réponse de la requête</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="358"/>
+        <location filename="../project_publisher_dockwidget.py" line="360"/>
         <source>_New project_</source>
         <translation>_Nouveau projet_</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="537"/>
+        <location filename="../project_publisher_dockwidget.py" line="564"/>
         <source>Unable to delete project &apos;%s&apos;</source>
         <translation>Impossible de supprimer le projet &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="446"/>
+        <location filename="../project_publisher_dockwidget.py" line="465"/>
         <source>Unable to load project &apos;%s&apos;</source>
         <translation>Impossible de charger le projet &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="469"/>
+        <location filename="../project_publisher_dockwidget.py" line="493"/>
         <source>Project must be saved before publishing. Do you want to save it now?</source>
         <translation>Le projet doit être enregistré avec d&apos;être publié. Souhaitez-vous l&apos;enregistrer maintenant?</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="519"/>
+        <location filename="../project_publisher_dockwidget.py" line="546"/>
         <source>Unable to publish project %s</source>
         <translation>Impossible de publier le projet %s</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="520"/>
+        <location filename="../project_publisher_dockwidget.py" line="547"/>
         <source>API Error : %s</source>
         <translation>Erreur API : %s</translation>
     </message>
     <message>
-        <location filename="../project_publisher_dockwidget.py" line="520"/>
+        <location filename="../project_publisher_dockwidget.py" line="547"/>
         <source>Deleting project in QWC ...</source>
         <translation>Suppression du projet dans QWC...</translation>
+    </message>
+    <message>
+        <location filename="../project_publisher_dockwidget.py" line="388"/>
+        <source>Project path</source>
+        <translation>Chemin du projet</translation>
+    </message>
+    <message>
+        <location filename="../project_publisher_dockwidget.py" line="388"/>
+        <source>Define project path (like dir1/dir2 ; leave blank for root directory)</source>
+        <translation>Définir le chemin du projet (ex : dir1/dir2 ; laisser vide pour le dossier racine)</translation>
+    </message>
+    <message>
+        <location filename="../project_publisher_dockwidget.py" line="505"/>
+        <source>Ouput project filename invalid or empty : &apos;%s&apos;</source>
+        <translation>Nom de fichier de sortie invalide ou vide : &apos;%s&apos;</translation>
+    </message>
+    <message>
+        <location filename="../project_publisher_dockwidget.py" line="514"/>
+        <source>Replace online project %s ?</source>
+        <translation>Remplacer le projet en ligne %s ?</translation>
     </message>
 </context>
 <context>

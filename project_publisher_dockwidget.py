@@ -27,6 +27,7 @@ import tempfile
 import requests
 import json
 
+from urllib.parse import urlparse
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal, QCoreApplication
 from qgis.core import QgsApplication, QgsMessageLog, Qgis, QgsAuthMethodConfig, QgsProject
@@ -53,6 +54,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.qtbtn_refresh_auth.setIcon(self.get_icon("refresh"))
 
         self.cfg_file = os.path.join(os.path.dirname(__file__), 'project_publisher_conf.json')
+        self.project_dir_prefix = "QGIS_qwc_publisher_"
 
         self.qwc_listprojects_path = "listprojects"
         self.qwc_getproject_path = "getproject"
@@ -374,15 +376,32 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         :return: Filename.
         :rtype: str
         """
-        current_project_path = self.get_current_project_path()
-        current_project_filename = os.path.basename(current_project_path)
-
         if self.qtcbs_projects_list.currentText() == self.new_project_item_value():
-            output_project_filename = current_project_filename
+            output_project_filename = self.define_output_project_path()
         else:
             output_project_filename = self.qtcbs_projects_list.currentText()
 
         return output_project_filename
+
+    def define_output_project_path(self):
+        current_project_path = self.get_current_project_path()
+        path, ok = QtWidgets.QInputDialog.getText(self,
+                                                  self.tr('Project path'),
+                                                  self.tr('Define project path (like dir1/dir2 ; leave blank for root directory)'))
+        if ok:
+            if path == "/":
+                path = ""
+
+            output_project_path = os.path.join(path, os.path.basename(current_project_path))
+
+            return output_project_path
+
+    def get_tempdir_path(self):
+        # TODO : use tenant to create tempdir name
+        local_tempdir_name = self.project_dir_prefix + urlparse(self.qwc_pp_service_base_url()).hostname
+        local_tempdir_path = os.path.join(tempfile.gettempdir(), local_tempdir_name)
+
+        return local_tempdir_path
 
     def enable_after_connect(self, enabled):
         """Enable or disable action buttons
@@ -445,7 +464,12 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if project_filename == self.new_project_item_value():
                 self.log_warn(self.tr("Unable to load project '%s'") % project_filename, True)
             else:
-                local_project_path = os.path.join(tempfile.gettempdir(), project_filename)
+                # Create project path with tempdir and qwc service hostname
+                local_project_path = os.path.join(self.get_tempdir_path(), project_filename)
+                # Create project dir if not exists
+                local_project_dir_path = os.path.dirname(local_project_path)
+                os.makedirs(local_project_dir_path, exist_ok=True)
+
                 try:
                     content = self.session.get(url_get_project, params=qwc_getproject_content_params, stream=True).content
                 except Exception as e:
@@ -475,23 +499,26 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             else:
                 return
 
-        current_project_path = self.get_current_project_path()
-        current_project_filename = os.path.basename(current_project_path)
+        output_project_filename = self.get_output_project_filename()
+
+        if not output_project_filename:
+            self.log_warn(self.tr("Ouput project filename invalid or empty : '%s'") % output_project_filename, True)
+            return
 
         url_publish_project = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_publishproject_path)
-        qwc_getproject_content_params = {'filename': current_project_filename, 'delete': False}
-
-        output_project_filename = self.get_output_project_filename()
+        qwc_publish_project_params = {'filename': output_project_filename, 'delete': False}
 
         projects = self.get_projects()
         if projects is not None:
             if output_project_filename in projects:
                 reply = QtWidgets.QMessageBox.question(iface.mainWindow(),
                                                        self.tr('Project already exists'),
-                                                       self.tr('Replace online project?'),
+                                                       self.tr('Replace online project %s ?') % output_project_filename,
                                                        QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
                 if not reply == QtWidgets.QMessageBox.Yes:
                     return
+
+        current_project_path = self.get_current_project_path()
 
         if current_project_path:
             with open(current_project_path, 'rb') as f:
@@ -506,7 +533,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         try:
             response = self.session.post(url_publish_project,
                                          files=files,
-                                         params=qwc_getproject_content_params)
+                                         params=qwc_publish_project_params)
         except Exception as e:
             self.log_err(str(e), True)
             return
