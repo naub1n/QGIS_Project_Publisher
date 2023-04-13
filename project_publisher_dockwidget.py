@@ -30,7 +30,7 @@ import json
 from urllib.parse import urlparse
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal, QCoreApplication
-from qgis.core import QgsApplication, QgsMessageLog, Qgis, QgsAuthMethodConfig, QgsProject
+from qgis.core import QgsApplication, QgsMessageLog, Qgis, QgsAuthMethodConfig, QgsProject, QgsSettings
 from qgis.utils import iface
 
 
@@ -53,7 +53,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.setupUi(self)
         self.qtbtn_refresh_auth.setIcon(self.get_icon("refresh"))
 
-        self.cfg_file = os.path.join(os.path.dirname(__file__), 'project_publisher_conf.json')
+        self.settings_root = "qwc-project-publisher"
         self.project_dir_prefix = "QGIS_qwc_publisher_"
 
         self.qwc_listprojects_path = "listprojects"
@@ -314,29 +314,35 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return error_info
 
     def save_config(self):
-        """Save current plugin configuration in json file
+        """Save current plugin configuration in QgsSettings
 
         :return: None.
         """
-        cfg = {
-            'auth_checked': self.qtgbx_auth.isChecked(),
-            'auth_id': self.qtcbx_auth_ids.currentText(),
-            'qwc_projectpublisher_url': self.qtle_url_qwc.text()
-        }
-        with open(self.cfg_file, 'w') as f:
-            json.dump(cfg, f, indent=4)
+
+        s = QgsSettings()
+        s.beginGroup(self.settings_root)
+        s.setValue("auth_checked", self.qtgbx_auth.isChecked())
+        s.setValue("auth_id", self.qtcbx_auth_ids.currentText())
+        s.setValue("qwc_projectpublisher_url", self.qtle_url_qwc.text())
 
     def get_config(self):
-        """Read plugin configuration in json file
+        """Read plugin configuration in QgsSettings
 
         :return: Plugin configuration.
         :rtype: dict
         """
-        if os.path.exists(self.cfg_file):
-            with open(self.cfg_file, 'r') as f:
-                cfg = json.load(f)
 
-            return cfg
+        s = QgsSettings()
+        s.beginGroup(self.settings_root)
+
+        cfg = {
+            'verif_ssl': s.value("verif_ssl", True, type=bool),
+            'auth_checked': s.value("auth_checked", False, type=bool),
+            'auth_id': s.value("auth_id", ""),
+            'qwc_projectpublisher_url': s.value("qwc_projectpublisher_url", "")
+        }
+
+        return cfg
 
     def load_config(self):
         """Change plugin widgets with plugin configuration values
@@ -345,9 +351,9 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """
         cfg = self.get_config()
         if cfg:
-            self.qtgbx_auth.setChecked(cfg['auth_checked'])
-            self.qtle_url_qwc.setText(cfg['qwc_projectpublisher_url'])
-            auth_id = cfg['auth_id']
+            self.qtgbx_auth.setChecked(cfg.get('auth_checked', False))
+            self.qtle_url_qwc.setText(cfg.get('qwc_projectpublisher_url', ''))
+            auth_id = cfg.get('auth_id', '')
             if auth_id in self.get_combobox_items(self.qtcbx_auth_ids):
                 self.qtcbx_auth_ids.setCurrentText(auth_id)
 
