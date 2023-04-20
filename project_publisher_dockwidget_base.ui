@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>301</width>
-    <height>313</height>
+    <height>426</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,6 +24,13 @@
        <bool>true</bool>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QRadioButton" name="qtrb_auth_basic">
+         <property name="text">
+          <string>QWC DB or LDAP auth</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
@@ -43,6 +50,44 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="qtrb_auth_oidc">
+         <property name="text">
+          <string>QWC OpenIdConnect</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Select WebBrowser used to connect:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="qtcbx_wb_oidc">
+         <item>
+          <property name="text">
+           <string>firefox</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>chrome</string>
+          </property>
+         </item>
+        </widget>
        </item>
       </layout>
      </widget>

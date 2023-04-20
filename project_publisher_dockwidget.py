@@ -26,6 +26,9 @@ import os
 import tempfile
 import requests
 import json
+import webbrowser
+import pkg_resources
+import platform
 
 from urllib.parse import urlparse
 from qgis.PyQt import QtGui, QtWidgets, uic
@@ -74,7 +77,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.load_auth_ids()
         self.load_config()
-
+        self.check_packages()
 
     def log(self, message, level, user_alert=False):
         """Send message to QGIS Console and in MessageBar (optional) with specific level
@@ -146,6 +149,9 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         for auth_id in auth_ids:
             cbx.addItem(auth_id)
 
+    def check_packages(self):
+        self.install_python_package("browsercookie")
+
     def check_before_connect(self):
         """Check value of AuthId combobox and value of QWC project publisher service URL
 
@@ -189,34 +195,84 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         login_url = requests.compat.urljoin(qwc_pp_service_base_url, self.qwc_login_path)
 
         if self.qtgbx_auth.isChecked():
-            auth_id = self.qtcbx_auth_ids.currentText()
-            auth_manager = QgsApplication.authManager()
-            qgs_conf = QgsAuthMethodConfig()
-            auth_manager.loadAuthenticationConfig(auth_id, qgs_conf, True)
-            username = qgs_conf.config('username', '')
-            password = qgs_conf.config('password', '')
+            if self.qtrb_auth_basic.isChecked():
+                auth_id = self.qtcbx_auth_ids.currentText()
+                auth_manager = QgsApplication.authManager()
+                qgs_conf = QgsAuthMethodConfig()
+                auth_manager.loadAuthenticationConfig(auth_id, qgs_conf, True)
+                username = qgs_conf.config('username', '')
+                password = qgs_conf.config('password', '')
 
-            data = {
-                'username': username,
-                'password': password
-            }
-        else:
-            data = {}
+                data = {
+                    'username': username,
+                    'password': password
+                }
+
+                response = self.session.post(login_url, data=data, verify=self.verif_ssl)
+                if 'csrf_access_token' not in self.session.cookies:
+                    self.log_err(self.tr("No CSRF token in reponse cookies"), True)
+                    return
+
+            elif self.qtrb_auth_oidc.isChecked():
+                import browsercookie
+
+                wb_name = self.qtcbx_wb_oidc.currentText()
+
+                if wb_name == 'firefox':
+                    cj = browsercookie.firefox()
+
+                if wb_name == 'chrome':
+                    cj = browsercookie.chrome()
+                    self.log_warn(self.tr("Browsercookie is no longer able to decrypt %s cookies") % wb_name, True)
+
+                if wb_name == 'edge':
+                    self.log_warn(self.tr("Browsercookie package cannot use %s") % wb_name, True)
+                    return
+
+                response = self.session.get(login_url, verify=self.verif_ssl, cookies=cj)
+
+                if 'csrf_access_token' not in self.session.cookies:
+                    self.log_warn(self.tr("No CSRF token found. Try to sign in with %s and retry to connect.") % wb_name, True)
+                    try:
+                        wb = webbrowser.get(wb_name)
+                        if not wb.name:
+                            raise
+                    except:
+                        self.register_webbrowser(wb_name)
+                        try:
+                            wb = webbrowser.get(wb_name)
+                        except Exception as e:
+                            self.log_err(self.tr("unable to open the webbrowser '%s' : %s") % (wb_name, str(e)), True)
+                            return
+
+                    wb.open(login_url)
+                    return
 
         try:
-            response = self.session.post(login_url, data=data)
             self.headers = response.headers
             if 'csrf_access_token' in self.session.cookies:
                 csrftoken = self.session.cookies['csrf_access_token']
                 self.session.headers.update({'X-CSRF-TOKEN': csrftoken})
                 self.headers['X-CSRF-TOKEN'] = csrftoken
             else:
-                self.log_warn("No CSRF token in reponse cookies")
+                self.log_warn(self.tr("No CSRF token in reponse cookies"))
         except Exception as e:
             self.log_err(str(e), True)
             return
 
         return response
+
+    def register_webbrowser(self, webbrowser_name):
+        if webbrowser_name == "firefox":
+            wb_path = self.firefox_path
+
+        if webbrowser_name == "chrome":
+            wb_path = self.chrome_path
+
+        if webbrowser_name == "edge":
+            wb_path = self.edge_path
+
+        webbrowser.register(webbrowser_name, None, webbrowser.BackgroundBrowser(wb_path))
 
     def get_projects(self):
         """Get all projects exposed by QWC project publisher
@@ -227,7 +283,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         url_listprojects = requests.compat.urljoin(self.qwc_pp_service_base_url(), self.qwc_listprojects_path)
 
         try:
-            response = self.session.get(url_listprojects)
+            response = self.session.get(url_listprojects, verify=self.verif_ssl)
         except Exception as e:
             self.log_err(str(e), True)
             return
@@ -324,6 +380,15 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         s.setValue("auth_checked", self.qtgbx_auth.isChecked())
         s.setValue("auth_id", self.qtcbx_auth_ids.currentText())
         s.setValue("qwc_projectpublisher_url", self.qtle_url_qwc.text())
+        s.setValue("verif_ssl", self.verif_ssl)
+        if self.qtrb_auth_basic.isChecked():
+            s.setValue("auth_type", "basic")
+        if self.qtrb_auth_oidc.isChecked():
+            s.setValue("auth_type", "oidc")
+        s.setValue("oidc_webbrowser", self.qtcbx_wb_oidc.currentText())
+        s.setValue("firefox_path", self.firefox_path)
+        s.setValue("edge_path", self.edge_path)
+        s.setValue("chrome_path", self.chrome_path)
 
     def get_config(self):
         """Read plugin configuration in QgsSettings
@@ -339,10 +404,27 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             'verif_ssl': s.value("verif_ssl", True, type=bool),
             'auth_checked': s.value("auth_checked", False, type=bool),
             'auth_id': s.value("auth_id", ""),
-            'qwc_projectpublisher_url': s.value("qwc_projectpublisher_url", "")
+            'qwc_projectpublisher_url': s.value("qwc_projectpublisher_url", ""),
+            'auth_type': s.value("auth_type", "oidc"),
+            'oidc_webbrowser': s.value("oidc_webbrowser", ""),
+            'firefox_path': s.value("firefox_path", ""),
+            'edge_path': s.value("edge_path", ""),
+            'chrome_path': s.value("chrome_path", "")
         }
 
         return cfg
+
+    def default_webbrowser_path(self, webbrowser_name):
+        os_name = platform.system()
+        wb_path = ""
+        if os_name == "Windows":
+            if webbrowser_name == "firefox":
+                wb_path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
+
+            if webbrowser_name == "chrome":
+                wb_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+
+        return wb_path
 
     def load_config(self):
         """Change plugin widgets with plugin configuration values
@@ -353,9 +435,30 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if cfg:
             self.qtgbx_auth.setChecked(cfg.get('auth_checked', False))
             self.qtle_url_qwc.setText(cfg.get('qwc_projectpublisher_url', ''))
+            self.verif_ssl = cfg.get('verif_ssl', True)
             auth_id = cfg.get('auth_id', '')
             if auth_id in self.get_combobox_items(self.qtcbx_auth_ids):
                 self.qtcbx_auth_ids.setCurrentText(auth_id)
+            auth_type = cfg.get('auth_type', 'oidc')
+            if auth_type == 'oidc':
+                self.qtrb_auth_oidc.setChecked(True)
+
+            if auth_type == 'basic':
+                self.qtrb_auth_basic.setChecked(True)
+
+            self.qtcbx_wb_oidc.setCurrentText(cfg.get('oidc_webbrowser', ''))
+            self.firefox_path = cfg.get('firefox_path', '')
+            self.edge_path = cfg.get('edge_path', '')
+            self.chrome_path = cfg.get('chrome_path', '')
+
+            if not self.firefox_path:
+                self.firefox_path = self.default_webbrowser_path("firefox")
+
+            if not self.edge_path:
+                self.edge_path = self.default_webbrowser_path("edge")
+
+            if not self.chrome_path:
+                self.chrome_path = self.default_webbrowser_path("chrome")
 
     def new_project_item_value(self):
         """Set value of the first item in projects combobox, for create a new project un QWC
@@ -430,7 +533,7 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         qwc_deleteproject_params = {'filename': project_filename}
 
         try:
-            response = self.session.delete(url_delete_project, params=qwc_deleteproject_params)
+            response = self.session.delete(url_delete_project, params=qwc_deleteproject_params, verify=self.verif_ssl)
         except Exception as e:
             self.log_err(str(e), user_alert)
             return
@@ -442,6 +545,17 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.log_info(self.tr("Project %s deleted") % project_filename, user_alert)
             self.populate_combobox_projects()
 
+    def install_python_package(self, package_name):
+        installed_packages = pkg_resources.working_set
+        installed_packages_list = sorted([i.key for i in installed_packages])
+        if package_name not in installed_packages_list:
+            self.log_info("Installing package %s" % package_name, Qgis.Info)
+            import subprocess
+            osgeo4w_env_path = os.path.join(os.getenv('OSGEO4W_ROOT'), 'OSGeo4W.bat')
+            # subprocess.check_call(['call', osgeo4w_env_path, ';',
+            #                        'python.exe', '-m', 'pip', 'install', '--upgrade', 'pip'], shell=True)
+            subprocess.check_call(['call', osgeo4w_env_path, ';',
+                                   'python.exe', '-m', 'pip', 'install', package_name], shell=True)
 
     def _clicked_connect_button(self):
         """Action when Connect button is clicked
@@ -477,7 +591,8 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 os.makedirs(local_project_dir_path, exist_ok=True)
 
                 try:
-                    content = self.session.get(url_get_project, params=qwc_getproject_content_params, stream=True).content
+                    content = self.session.get(url_get_project, params=qwc_getproject_content_params,
+                                               stream=True, verify=self.verif_ssl).content
                 except Exception as e:
                     self.log_err(str(e), True)
                     return
@@ -539,7 +654,8 @@ class ProjectPublisherDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         try:
             response = self.session.post(url_publish_project,
                                          files=files,
-                                         params=qwc_publish_project_params)
+                                         params=qwc_publish_project_params,
+                                         verify=self.verif_ssl)
         except Exception as e:
             self.log_err(str(e), True)
             return
