@@ -6,7 +6,7 @@
 name=Project Publisher for QWC
 qgisMinimumVersion=3.0
 description=Publish your project to QWC2 easily with qwc-project-publisher-service
-version=0.5
+version=0.6
 author=Nicolas AUBIN
 email=aubinnic@gmail.com
 
@@ -34,6 +34,9 @@ hasProcessingProvider=no
   - Remove unnecessary timeout when publishing
   0.5
   - Add ability to read/publish projects in subdirectories
+  0.6
+  - Use QgsSettings instead of json file to store settings
+  - Add ability to login with qwc-oidc-auth-service
 
 # Tags are comma separated with spaces allowed
 tags=python
